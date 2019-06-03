@@ -10,7 +10,7 @@ plt.scatter(x, y, s=area, c=colors, alpha=0.5)
 plt.show()
 
 #%% plot y versus x as lines
-X = np.linspace(-np.pi, np.pi, 256,endpoint=True)
+X = np.linspace(-np.pi, np.pi, 256, endpoint=True)
 C,S = np.cos(X), np.sin(X)
 
 plt.plot(X, C, color="blue", linewidth=2.5, linestyle="-")
