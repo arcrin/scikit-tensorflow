@@ -2,7 +2,11 @@
 import os
 import tarfile
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib
 from six.moves import urllib
+
+# matplotlib.use('TkAgg')
 #%%
 DOWNLOAD_ROOT = "https://raw.githubusercontent.com/ageron/handson-ml2/master/"
 HOUSING_PATH = os.path.join("datasets", "housing")
@@ -29,3 +33,7 @@ def load_housing_data(housing_path=HOUSING_PATH):
 
 housing = load_housing_data()
 housing.head()
+
+#%%
+housing.hist(bins=50, figsize=(20, 15))
+plt.show()
