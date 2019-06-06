@@ -8,6 +8,9 @@ from six.moves import urllib
 from zlib import crc32
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.impute import SimpleImputer
+from pandas.plotting import scatter_matrix
+
 
 
 #%%
@@ -86,3 +89,60 @@ for train_index, test_index in split.split(housing, housing["income_cat"]):
 #%% Drop income_cat
 for set_ in (strat_train_set, strat_test_set):
     set_.drop("income_cat", axis=1, inplace=True)
+
+#%%
+housing = strat_train_set.copy()
+
+#%%
+housing.plot(kind="scatter", x="longitude", y="latitude", alpha=0.1)
+plt.show()
+
+
+#%%
+housing.plot(kind="scatter", x="longitude", y="latitude", alpha=0.4,
+             s=housing["population"]/100, label="population", figsize=(10,7),
+             c="median_house_value", cmap=plt.get_cmap("jet"), colorbar=True)
+plt.legend()
+plt.show()
+
+#%% Looking for Correlations
+corr_matrix = housing.corr()
+
+#%%
+attributes = ["median_house_value", "median_income", "total_rooms", "housing_median_age"]
+scatter_matrix(housing[attributes], figsize=(12, 8))
+plt.show()
+
+#%%
+housing.plot(kind="scatter", x="median_income", y="median_house_value", alpha=0.1)
+plt.show()
+
+#%%
+housing["rooms_per_household"] = housing["total_rooms"]/housing["household"]
+housing["bedrooms_per_room"] = housing["total_bedrooms"]/housing["total_rooms"]
+housing["popylation_per_household"] = housing["population"]/housing["households"]
+
+#%%
+corr_matrix = housing.corr()
+
+#%% Data cleaning
+housing.dropna(subset=["total_bedrooms"])
+housing.drop("total_bedrooms", axis=1)
+median = housing["total_bedrooms"].median()
+housing["total_bedrooms"].fillna(median, inplace=True)
+
+#%%
+imputer = SimpleImputer(strategy="median")
+
+
+#%%
+housing_num = housing.drop("ocean_proximity", axis=1)
+
+#%%
+imputer.fit(housing_num)
+
+#%%
+X = imputer.transform(housing_num)
+
+#%%
+housing_tr = pd.DataFrame(X, columns=housing_num.columns)
