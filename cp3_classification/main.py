@@ -1,4 +1,4 @@
-#%%
+#%% Imports
 from sklearn.datasets import fetch_openml
 from sklearn.linear_model import SGDClassifier
 from sklearn.model_selection import StratifiedKFold
@@ -12,18 +12,19 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
+from sklearn.ensemble import RandomForestClassifier
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-#%%
+#%% Fetch and load mnist
 mnist = fetch_openml("mnist_784", version=1)
 
-#%%
+#%% Separate data and label
 x, y = mnist["data"], mnist["target"]
 
-#%%
+#%% Plot an image
 some_digit = x[0]
 some_digit_image = some_digit.reshape(28, 28)
 
@@ -32,17 +33,17 @@ plt.axis("off")
 plt.show()
 
 
-#%%
+#%% Convert label to unsigned integer
 y = y.astype(np.uint8)
 
-#%% training and test set
+#%% Separate training and test set
 x_train, x_test, y_train, y_test = x[:60000], x[60000:], y[:60000], y[60000:]
 
 #%% Binary classifier, 5-detector
 y_train_5 = (y_train == 5)
 y_test_5 = (y_test == 5)
 
-#%%
+#%% SGD Classifier
 sgd_clf = SGDClassifier(random_state=42)
 sgd_clf.fit(x_train, y_train_5)
 
@@ -141,3 +142,8 @@ plot_roc_curve(fpr, tpr)
 
 #%% ROC AUC
 roc_auc_score(y_train_5, y_scores)
+
+
+#%% RnadomForestClassifier
+forest_clf = RandomForestClassifier(random_state=42)
+y_probas_forest = cross_val_predict(forest_clf, x_train, y_train_5, cv=3, method="predict_proba")
