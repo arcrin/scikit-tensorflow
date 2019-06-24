@@ -13,6 +13,8 @@ from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.multiclass import OneVsRestClassifier
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -76,7 +78,7 @@ class Never5Classifier(BaseEstimator):
     def predict(self, x):
         return np.zeros((len(x), 1), dtype=bool)
 
-#%%
+#%% The dummy classifier also provides scores above 90%. Because only 10% of the data is 5
 never_5_clf = Never5Classifier()
 print(cross_val_score(never_5_clf, x_train, y_train_5, cv=3, scoring="accuracy"))
 
@@ -140,10 +142,38 @@ def plot_roc_curve(fpr, tpr, label=None):
 fpr, tpr, thresholds = roc_curve(y_train_5, y_scores)
 plot_roc_curve(fpr, tpr)
 
-#%% ROC AUC
+#%% ROC AUC (area under curve)
 roc_auc_score(y_train_5, y_scores)
 
 
 #%% RnadomForestClassifier
 forest_clf = RandomForestClassifier(random_state=42)
 y_probas_forest = cross_val_predict(forest_clf, x_train, y_train_5, cv=3, method="predict_proba")
+
+#%% Need scores, not probabilities for ROC curve
+y_scores_forest = y_probas_forest[:, 1]
+fpr_forest, tpr_forest, thresholds_forest = roc_curve(y_train_5, y_scores_forest)
+
+#%% plot ROC curve for RandomForestClassifier
+plt.plot(fpr, tpr, "b:", label="SGD")
+plot_roc_curve(fpr_forest, tpr_forest, "Random Forest")
+plt.legend(loc="lower right")
+plt.show()
+
+#%% RandomForestClassifier ROC AUC score
+roc_auc_score(y_train_5, y_scores_forest)
+
+
+#%% Multi-class Classification, SVM, OvO classifier, 45 binary classifier
+svm_clf = SVC()
+svm_clf.fit(x_train, y_train)
+svm_clf.predict([some_digit])
+
+#%% scores for each class
+some_digit_score = svm_clf.decision_function([some_digit])
+
+
+#%% Switch between OvR and OvO classifier
+ovr_clf = OneVsRestClassifier(SVC())
+ovr_clf.fit(x_train, y_train)
+ovr_clf.predict([some_digit])
