@@ -8,7 +8,7 @@ x = 2 * np.random.rand(100, 1)
 y = 4 + 3 * x + np.random.randn(100, 1)
 plt.scatter(x, y)
 
-# plt.show()
+plt.show()
 
 #%% Normal Equation for best fitting theta
 x_b = np.c_[np.ones((100, 1)), x]  # add x0 = 1 to each instance
@@ -29,6 +29,12 @@ plt.show()
 #%% SKlearn linear regression
 lin_reg = LinearRegression()
 lin_reg.fit(x, y)
-print("x0:{}, coef: {}".format(lin_reg.intercept_, lin_reg.coef_))
+print("theta0:{}, coef: {}".format(lin_reg.intercept_, lin_reg.coef_))
 print("Prediction", lin_reg.predict(x_new))
 
+
+#%% least squares, svd stands for Singular Variable Decomposition
+theta_best_svd, residuals, rank, s = np.linalg.lstsq(x_b, y, rcond=1e-6)
+
+#%% Pseudoinverse
+np.linalg.pinv(x_b).dot(y)
