@@ -123,3 +123,13 @@ plt.xlabel("$x_1$", fontsize=18)
 plt.ylabel("$y$", rotation=0, fontsize=18)
 plt.axis([0, 2, 0, 15])
 plt.show()
+
+#%%
+from sklearn.linear_model import SGDRegressor
+
+sgd_reg = SGDRegressor(max_iter=1000, tol=1e-3, penalty=None, eta0=0.1, random_state=42)
+sgd_reg.fit(x, y.ravel())
+
+#%%
+sgd_reg.intercept_, sgd_reg.coef_
+
