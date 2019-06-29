@@ -133,3 +133,136 @@ sgd_reg.fit(x, y.ravel())
 #%%
 sgd_reg.intercept_, sgd_reg.coef_
 
+#%% Mini-batch gradient descent
+theta_path_mgd = []
+n_iterations = 50
+minibatch_size = 20
+
+np.random.seed(42)
+theta = np.random.randn(2, 1)
+
+t0, t1 = 200, 1000
+def learning_schedule(t):
+    return t0 / (t + t1)
+
+t = 0
+for epoch in range(n_iterations):
+    shuffled_indices = np.random.permutation(m)
+    x_b_shuffled = x_b[shuffled_indices]
+    y_shuffled = y[shuffled_indices]
+    for i in range(0, m, minibatch_size):
+        t += 1
+        xi = x_b_shuffled[i:i+minibatch_size]
+        yi = y_shuffled[i:i+minibatch_size]
+        gradients = 2/minibatch_size * xi.T.dot(xi.dot(theta) - yi)
+        eta = learning_schedule(t)
+        theta = theta - eta * gradients
+        theta_path_mgd.append(theta)
+
+#%%
+theta
+
+#%%
+theta_path_bgd = np.array(theta_path_bgd)
+theta_path_sgd = np.array(theta_path_sgd)
+theta_path_mgd = np.array(theta_path_mgd)
+
+#%%
+plt.figure(figsize=(7, 4))
+plt.plot(theta_path_sgd[:, 0], theta_path_sgd[:, 1], "r-s", linewidth=1, label="Stochastic")
+plt.plot(theta_path_mgd[:, 0], theta_path_mgd[:, 1], "g-+", linewidth=2, label="Mini-batch")
+plt.plot(theta_path_bgd[:, 0], theta_path_bgd[:, 1], "b-o", linewidth=3, label="Batch")
+plt.legend(loc="upper left", fontsize=16)
+plt.xlabel(r"$\theta_0$", fontsize=20)
+plt.ylabel(r"$\theta_1$", fontsize=20, rotation=0)
+plt.axis([2.5, 4.5, 2.3, 3.9])
+plt.show()
+
+#%% Polynomial Regression
+import numpy as np
+import numpy.random as rnd
+
+np.random.seed(42)
+#%%
+m = 100
+x = 6 * np.random.rand(m, 1) - 3
+y = 0.5 * x ** 2 + x + 2 + np.random.randn(m, 1)
+#%%
+plt.plot(x, y, "b.")
+plt.xlabel("$x_1$", fontsize=18)
+plt.ylabel("$y$", rotation=0, fontsize=18)
+plt.axis([-3, 3, 0, 10])
+plt.show()
+
+#%%
+from sklearn.preprocessing import PolynomialFeatures
+poly_features = PolynomialFeatures(degree=2, include_bias=False)
+x_poly = poly_features.fit_transform(x)
+x[0]
+#%%
+x_poly[0]
+#%%
+lin_reg = LinearRegression()
+lin_reg.fit(x_poly, y)
+lin_reg.intercept_, lin_reg.coef_
+#%%
+x_new = np.linspace(-3, 3, 100).reshape(100, 1)
+x_new_poly = poly_features.transform(x_new)
+y_new = lin_reg.predict(x_new_poly)
+plt.plot(x, y, "b.")
+plt.plot(x_new, y_new, "r-", linewidth=2, label="Predictions")
+plt.xlabel("$x_1$", fontsize=18)
+plt.ylabel("$y$", rotation=0, fontsize=18)
+plt.legend(loc="upper left", fontsize=14)
+plt.axis([-3, 3, 0, 10])
+plt.show()
+
+#%%
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+
+for style, width, degree in (("g-", 1, 300), ("b--", 2, 2), ("r-+", 2, 1)):
+    polybig_features = PolynomialFeatures(degree=degree, include_bias=False)
+    std_scaler = StandardScaler()
+    lin_reg = LinearRegression()
+    polynomial_regression = Pipeline([
+        ("poly_feature", poly_features),
+        ("std_scaler", std_scaler),
+        ("lin_reg", lin_reg),
+    ])
+    polynomial_regression.fit(x, y)
+    y_newbig = polynomial_regression.predict(x_new)
+    plt.plot(x_new, y_newbig, style, label=str(degree), linewidth=width)
+
+plt.plot(x, y, "b.", linewidth=3)
+plt.legend(loc="upper left")
+plt.xlabel("$x_1$", fontsize=18)
+plt.ylabel("$y$", rotation=0, fontsize=18)
+plt.axis([-3, 3, 0, 10])
+plt.show()
+
+
+#%%
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+
+def plot_learning_curves(model, x, y):
+    x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.2, random_state=10)
+    train_errors, val_errors = [], []
+    for m in range(1, len(x_train)):
+        model.fit(x_train[:m], y_train[:m])
+        y_train_predict = model.predict(x_train[:m])
+        y_val_predict = model.predict(x_val)
+        train_errors.append(mean_squared_error(y_train[:m], y_train_predict))
+        val_errors.append(mean_squared_error(y_val, y_val_predict))
+    plt.plot(np.sqrt(train_errors), "r-+", linewidth=2, label="train")
+    plt.plot(np.sqrt(val_errors), "b-", linewidth=3, label="val")
+    plt.legend(loc="upper right", fontsize=14)
+    plt.xlabel("Training set size", fontsize=14)
+    plt.ylabel("RMSE", fontsize=14)
+
+#%%
+lin_reg = LinearRegression()
+plot_learning_curves(lin_reg, x, y)
+plt.axis([0, 80, 0, 3])
+plt.show()
