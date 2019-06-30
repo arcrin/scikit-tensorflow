@@ -266,3 +266,43 @@ lin_reg = LinearRegression()
 plot_learning_curves(lin_reg, x, y)
 plt.axis([0, 80, 0, 3])
 plt.show()
+#%%
+from sklearn.pipeline import Pipeline
+polynomial_regression = Pipeline([
+    ("poly_features", PolynomialFeatures(degree=10, include_bias=False)),
+    ("lin_reg", LinearRegression()),
+])
+
+plot_learning_curves(polynomial_regression, x, y)
+plt.axis([0, 80, 0, 3])
+plt.show()
+
+#%% Regularized Model
+np.random.seed(42)
+m = 20
+x = 3 * np.random.rand(m, 1)
+y = 1 + 0.5 * x + np.random.randn(m, 1) / 1.5
+x_new = np.linspace(0, 3, 100).reshape(100, 1)
+#%%
+from sklearn.linear_model import Ridge
+ridge_reg = Ridge(alpha=1, solver="cholesky", random_state=42)
+ridge_reg.fit(x, y)
+ridge_reg.predict([[1.5]])
+#%%
+from sklearn.linear_model import Ridge
+
+def plot_model(model_class, polynomial, alphas, **model_kargs):
+    for alpha, sytle in zip(alphas, ("b-", "g--", "r:")):
+        model = model_class(alpha, **model_kargs) if alpha > 0 else LinearRegression()
+        if polynomial:
+            model = Pipeline([
+                ("poly_features", PolynomialFeatures(degree=10, include_bias=False)),
+                ("std_scaler", StandardScaler()),
+                ("regul_reg", model),
+            ])
+        model.fit(x, y)
+        y_new_regul = model.predict(x_new)
+        lw = 2 if alpha > 0 else 1
+        plt.plot(x_new, y_new_regul, style, linewidth=lw, label=r"$\alpha = {}".format(alpha))
+        plt.plot(x, y, )
+
