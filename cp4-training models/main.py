@@ -305,18 +305,23 @@ x = 3 * np.random.rand(m, 1)
 y = 1 + 0.5 * x + np.random.randn(m, 1) / 1.5
 x_new = np.linspace(0, 3, 100).reshape(100, 1)
 
-#%% Ridge Regularization
+#%% import Ridge model, Cholesky decomposition
 from sklearn.linear_model import Ridge
 ridge_reg = Ridge(alpha=1, solver="cholesky", random_state=42)
 ridge_reg.fit(x, y)
 ridge_reg.predict([[1.5]])
 
-#%%
+#%% Ridge with Stochastic Average Gradient descent solver
 ridge_reg = Ridge(alpha=1, solver="sag", random_state=42)
 ridge_reg.fit(x, y)
 ridge_reg.predict([[1.5]])
 
-#%%
+#%% Include regularization term in SGD Stochastic Gradient Descent
+sgd_reg = SGDRegressor(penalty="l2", max_iter=1000, tol=1e-3, random_state=42)
+sgd_reg.fit(x, y.ravel())
+sgd_reg.predict([[1.5]])
+
+#%% Ridge model (regularized linear regression) with different Alphas
 from sklearn.linear_model import Ridge
 
 def plot_model(model_class, polynomial, alphas, **model_kargs):
@@ -337,9 +342,83 @@ def plot_model(model_class, polynomial, alphas, **model_kargs):
     plt.xlabel("$x_1$", fontsize=18)
     plt.axis([0, 3, 0, 4])
 
+#%% Plot Ridge Regression with different alpha
 plt.figure(figsize=(8, 4))
 plt.subplot(121)
 plot_model(Ridge, polynomial=False, alphas=(0, 10, 100), random_state=42)
 plt.ylabel("$y$", rotation=0, fontsize=18)
 plt.subplot(122)
 plot_model(Ridge, polynomial=True, alphas=(0, 10**-5, 1), random_state=42)
+
+#%% Lasso Regression
+from sklearn.linear_model import Lasso
+
+plt.figure(figsize=(8, 4))
+plt.subplot(121)
+plot_model(Lasso, polynomial=False, alphas=(0, 0.1, 1), random_state=42)
+plt.ylabel("$y$", rotation=0, fontsize=18)
+plt.subplot(122)
+plot_model(Lasso, polynomial=True, alphas=(0, 10**-7, 1), random_state=42)
+
+
+#%% Elastic Net
+from sklearn.linear_model import ElasticNet
+elastic_net = ElasticNet(alpha=0.1, l1_ratio=0.5, random_state=42)
+elastic_net.fit(x, y)
+elastic_net.predict([[1.5]])
+
+#%%
+np.random.seed(42)
+m = 100
+x = 6 * np.random.rand(m, 1) - 3
+y = 2 + x + 0.5 * x**2 + np.random.randn(m, 1)
+
+x_train, x_val, y_train, y_val = train_test_split(x[:50], y[:50].ravel(), test_size=0.5, random_state=10)
+
+#%% Early stopping example
+from sklearn.base import clone
+
+poly_scaler = Pipeline([
+    ("poly_features", PolynomialFeatures(degree=90, include_bias=False)),
+    ("std_scaler", StandardScaler())
+])
+
+x_train_poly_scaled = poly_scaler.fit_transform(x_train)
+x_val_poly_scaled = poly_scaler.transform(x_val)
+
+sgd_reg = SGDRegressor(max_iter=1, tol=-np.infty, warm_start=True,
+                       penalty=None, learning_rate="constant", eta0=0.0005, random_state=42)
+
+minimum_val_error = float("inf")
+best_epoch = None
+best_model = None
+for epoch in range(1000):
+    sgd_reg.fit(x_train_poly_scaled, y_train)
+    y_val_predict = sgd_reg.predict(x_val_poly_scaled)
+    val_error = mean_squared_error(y_val, y_val_predict)
+    if val_error < minimum_val_error:
+        minimum_val_error = val_error
+        best_epoch = epoch
+        best_model = clone(sgd_reg)
+
+#%% Create the graph
+sgd_reg = SGDRegressor(max_iter=1, tol=-np.infty, warm_start=True,
+                       penalty=None, learning_rate="constant", eta0=0.0005, random_state=42)
+n_epochs = 500
+train_errors, val_errors = [], []
+for epoch in range(n_epochs):
+    sgd_reg.fit(x_train_poly_scaled, y_train)
+    y_train_predict = sgd_reg.predict(x_train_poly_scaled)
+    y_val_predict = sgd_reg.predict(x_val_poly_scaled)
+    train_errors.append(mean_squared_error(y_train, y_train_predict))
+    val_errors.append(mean_squared_error(y_val, y_val_predict))
+
+best_epoch = np.argmin(val_errors)
+best_val_rmse = np.sqrt(val_errors[best_epoch])
+
+plt.annotate("Best Model",
+             xy=(best_epoch, best_val_rmse),
+             xytext=(best_epoch, best_val_rmse + 1),
+             ha="center",
+             arrowprops=dict(facecolor="black", shrink=0.05),
+             fontsize=16,)
