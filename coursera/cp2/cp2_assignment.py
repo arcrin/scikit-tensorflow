@@ -32,6 +32,21 @@ def compute_cost(instance, label, theta):
 
 #%%
 x = data[:, 0]
-x = np.c_[np.ones(np.size(y)), x]
+x_biased = np.c_[np.ones(np.size(y)), x]
 theta = np.array([[0], [0]])
 compute_cost(x, y, theta)
+
+#%%
+def gradient_descent(sample, label, theta, alpha, iterations):
+    print(label)
+    m = len(label)
+    for i in range(iterations):
+        theta = theta - alpha * (1 / m) * sample.T.dot(sample.dot(theta) - label)
+    return theta
+
+#%%
+theta_new = gradient_descent(x, y.reshape(-1,1), theta, 0.01, 1500)
+plt.scatter(x[:, 1], y, marker='x', c='r')
+plt.xlabel('Population of city in 10,000s')
+plt.ylabel('Profits in $10,000s')
+plt.plot(x[:, 1], x.dot(theta_new), 'b-')
